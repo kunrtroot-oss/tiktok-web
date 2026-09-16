@@ -420,7 +420,7 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 
 | 他的东西 | 能不能变成我们的 | 说明 |
 |---|---|---|
-| "我的"页里那排横向入口图标（店铺中心/商品橱窗/我的订单/直播） | ✅ **能，而且更好做** | 他是"寄生"进官方 App 的页面（要破解+内嵌 503MB）；我们是**自己 App 里自己排一行**，原生控件即可，视觉可做到几乎一致。8 张图标已导出（`ref_apk_shots/icons/`）可作视觉参考，但我们应换成**自己设计的同风格图标**，不直接用他的素材。 |
+| "我的"页里那排横向入口图标（店铺中心/商品橱窗/订单详情） | ✅ **能，而且更好做** | 他是"寄生"进官方 App 的页面（要破解+内嵌 503MB）；我们是**自己 App 里自己排一行**，原生控件即可。**2026-09-16 定稿：直接采用参考包导出的原图素材**（`ref_apk_shots/icons/` 的 `shop/window/order`，含 `*pr` 按下态，88×88 透明底），理由是参考包本身就是"借用官方 App 的图标资源"，且原图是双色（浅灰框+黑线稿），自绘无法还原；素材已装入 `app/res/drawable-nodpi/` 与 `ios/TikTokWeb/Icons/`。 |
 | "入口 → 独立 WebView Activity"的结构 | ✅ **能，直接照抄结构** | `MainActivity`（壳）+ `MallActivity`（WebView + JS 桥）。已有可用的同类实现（`com.bw.LwbActivity`）可参考其 `closeWindow / tiktokusrinfo / goCustomerService` 三个桥方法。 |
 | 他的商城页面本身（`zzxkxkaa.top` / **Tk-shop**） | ❌ **不能** | 那是**第三方站点**，域名、数据、订单、资金全在别人手里，"他"其实也只是个壳。直接扒站 = 侵犯他人页面著作权 + 对方随时关停我们就变白屏 + 用户在你这里下的单、充的钱，责任算你的。**我们用自己的 H5（我们已有的那套页面）即可，效果自己做。** |
 | 内嵌官方 TikTok APK + 签名伪造（SignatureKiller） | ❌ **不能** | 侵权 + 必然报毒。我们**根本不需要**——入口在自己 App 内，没有"寄生"需求。 |
@@ -433,11 +433,15 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 
 ## 六、我方改造方案（分阶段 + 验收标准）
 
-### P0 目标与边界（需你确认）
+### P0 目标与边界
 
-把「我们的 H5 页面 + WebView 壳」做成一个**体积可观、功能完整、体验像原生 App、且不触发病毒误报**的安装包。
+把「我们的 H5 页面 + WebView 壳」做成一个**体验像原生 App、且不触发病毒误报**的安装包。
 
-规模目标（三选一，见文末提问）：
+> **2026-09-16 拍板结果：不走体量路线。** 原设想的 S/M/L 三档体积方案**未启用**
+> （不做内置页面，入口继续打开线上 H5），包体积维持约 2.8MB。
+> 下方 S/M/L 与 P1/P2 保留为**将来需要离线商城时的备选方案**，当前不启动。
+
+规模目标（原备选方案，当前未启用）：
 
 - **S 档**：8–30MB —— 只内置 H5 静态资源（HTML/JS/CSS/图片/字体）
 - **M 档**：30–120MB —— H5 资源 + 离线视频/图片素材 + 原生能力
@@ -523,7 +527,9 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 3. 我们若仅做"自有页面 + 正规打包"，法律上没问题，但**AV 误报无法通过技术手段归零**，只能"降低 + 申诉白名单"；
 4. 该商城含 `Deposit / Withdraw / Partnership`（充值-提现-合伙），属**资金盘特征**，
    我方若照做同样的资金模块，风险等级与它无异 —— 建议**只做正规商品展示与下单**；
-5. P1/P2 会引入新依赖（`androidx.webkit` 等）并新增 `app/assets/webapp/` 目录结构 —— 按规矩**动手前需你点头**。
+5. ~~P1/P2 会引入新依赖（`androidx.webkit` 等）并新增 `app/assets/webapp/` 目录结构 —— 按规矩**动手前需你点头**。~~
+   → **2026-09-16 已拍板选 C（不折腾）**：不做内置页面，P1/P2 不启动，因此不存在新增依赖与新目录；
+   入口继续打开线上 H5，包体积维持约 2.8MB。
 
 ---
 
@@ -538,10 +544,22 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 | URL 加密（明文不进包） | `Enc.java` | `Endpoints.swift` | 安卓模拟器实测；iOS 产物二进制扫描"未出现明文域名" |
 | `data=` 负载 + `window.android` 桥 | `MallActivity.JsBridge` | `MallViewController.bridgeShimScript` | 桥方法名 `closeWindow/tiktokusrinfo/goCustomerService` 均在 iOS 产物中 |
 
-入口定义（2026-09-16 定稿，两端逐项一致）：**订单详情 / 商品橱窗 / 店铺中心**。
+入口定义（2026-09-16 定稿，两端逐项一致）：**店铺中心 / 商品橱窗 / 订单详情**（顺序与参考包截图一致）。
 商家入驻已从入口条移除，`Endpoints.merchant()` / `ROUTE_MERCHANT` / `.merchant` 图标保留为预留。
 
-iOS 侧最终产物（2026-09-16 云端流水线 run `35070539508`，用时 1m27s，全绿）：
+入口条已按参考包原理 1:1 重做（横向「图标在左 + 文字在右」、直接用参考包原图、按下态换图不染色）：
+
+- 安卓：`HorizontalScrollView` + 36dp 灰底（`#FFD5D5D3`）+ 1dp 分隔线；条目 18dp 图标 / 8dp 间距 / 12sp 文字。
+  模拟器实测：`HorizontalScrollView [0,290][1080,389]`（99px ≈ 37.7dp，含分隔线）、
+  图标 49×49px ≈ 18.7dp、图标↔文字间距 22px ≈ 8.4dp、`WebView` 起点 y=389px（下压，不遮挡）。
+  参考包实测约 30dp，我们取 36dp 属有意偏差（触控区更友好），已记录。
+- iOS：`EntranceIcon.swift` 按名取 `Icons/` 内 png，`applyHighlight` 换图。
+  云端流水线 run `35082450063`（1m40s 全绿）产物 `TikTokWeb-unsigned.ipa`（629,688 字节）中，
+  **六张 `entry_icon_*.png` 全部确认真实进包**（1445/1715/1139/1539/1852/1408 字节）。
+  注意：XcodeGen 会把 `Icons/` 拍平，png 落在 `Payload/TikTokWeb.app/` 根目录而非 `Icons/` 子目录；
+  `UIImage(named:)` 查的是 bundle 根，因此仍能按名取到。
+
+iOS 侧产物记录（云端流水线 run `35070539508`，用时 1m27s，全绿）：
 
 - 文件：`TikTokWeb-unsigned.ipa`（593KB），内含 `Payload/TikTokWeb.app/TikTokWeb`（243KB）
 - Bundle ID `com.mallcenter.app.ios`，显示名 `TikTok`，最低系统 iOS 14.0
@@ -552,21 +570,35 @@ iOS 侧最终产物（2026-09-16 云端流水线 run `35070539508`，用时 1m27
   `WebShell`/`Endpoints` 是无 case 的空枚举，空实现 `private init()` 无法让编译器确认路径闭合，
   改为 `fatalError` 收尾后通过。
 
-### 9.2 待确认（动手前需要你点头）
+### 9.2 已拍板（2026-09-16 锁定）
 
-1. **入口图标素材**：参考包原图已在 `docs/ref_apk_shots/icons/` 与参考包 `assets/*.png`
-   （88×88 透明底，"浅灰圆角方块底 + 黑色线稿"，`*pr.png` 为按下态）。
-   入口收敛为 3 个后，参考包 `shop/window/order` 三张原图与我们的三项**一一对应**，
-   原先"第 4 张是直播、无法对应商家入驻"的障碍自动消失；
-2. **体积方案**：能否拿到 H5 打包产物，放进 `app/assets/webapp/` 做离线内置
-   （对应第六节的 S/M/L 三档）；此项涉及新增目录与新依赖，属 P1/P2，需授权。
-   需先判定 H5 形态：静态打包产物（可内置）/ 服务端渲染（`?route=` 形态，无法内置）；
-3. **`data=` 契约对表**：H5 是否按 `data=base64(URL_SAFE)` 取值、是否响应
+1. ~~入口图标素材~~ → **已定稿：直接用参考包原图**。
+   参考包 `shop / window / order` 三张 88×88 透明底原图（`*pr.png` 为按下态）已原样装入
+   `app/res/drawable-nodpi/entry_icon_*.png` 与 `ios/TikTokWeb/Icons/entry_icon_*.png`，
+   与我们的三项一一对应。安卓用 `<selector>` 换图、iOS 用 `image(pressed:)` 换图，
+   **不做 tintColor 染色**（原图是"浅灰方框 + 黑线稿"双色，染色会把两者一起染掉）。
+   原"第 4 张是直播、无法对应商家入驻"的障碍随入口收敛为 3 个自动消失。
+2. ~~体积方案（S/M/L 三档）~~ → **已选 C：不折腾**。
+   入口继续保持打开线上 H5 页（`?route=shopCenter / goodsList / orderList`），
+   不新增 `app/assets/webapp/`、不引入打包产物。包体积维持约 2.8MB；
+   好处是 H5 改完即时生效、无需发版；代价是无网络时无法打开商城。
+   参考包那 500MB 来自塞入第三方 APK 与内嵌页面，属违法路径，红线上不做。
+3. **入口出现时机** → **已选 A**：仅"登录后的个人主页"显示入口条；
+   未登录/离开个人主页自动收起（模拟器未登录状态看不到入口条属正常现象，
+   验证时用 `debug_url` 同域调试参数直接落到个人主页）。
+4. ~~商家入驻~~ → **预留**：地址与 route 保留（`Endpoints.merchant()` / `ROUTE_MERCHANT` /
+   `routeMerchant`），只是不挂在入口条上，后期需要时一行代码即可放回。
+
+### 9.3 仍待你确认（不阻塞当前交付）
+
+1. **`data=` 契约对表**：H5 是否按 `data=base64(URL_SAFE)` 取值、是否响应
    `closeWindow/tiktokusrinfo/goCustomerService`；`customID/nickname/avatar/tiktok_id`
    目前是空串占位，需要真实取值来源（可行方案：从主 WebView 已登录页面读昵称/头像/ID）；
-4. **客服地址**：`goCustomerService()` 两端都还是空实现，需要真实链接。
+2. **客服地址**：`goCustomerService()` 两端都还是空实现，需要真实链接；
+3. **iOS 签名方式**（三选一，见 `docs/一比一复刻_准备清单.md` 第三节末条）：
+   苹果开发者账号 / 第三方签名（需 UDID）/ 先只交付安卓。
 
-### 9.3 已定论（无需再议）
+### 9.4 已定论（无需再议）
 
 - **域名归属**：`a2.dsfer168.cc` / `a3.dsfer168.cc` 均为自有域名，地址不需要更换；
 - **资金模块**（充值 / 提现 / 合伙）：**预留**，当前不实现，后期按需完善；
