@@ -2,7 +2,7 @@ name: TikTokWeb
 options:
   bundleIdPrefix: com.mallcenter.app
   deploymentTarget:
-    iOS: "13.0"
+    iOS: "14.0"
   createIntermediateGroups: true
 targets:
   TikTokWeb:
@@ -14,6 +14,27 @@ targets:
           - "Info.plist"
     info:
       path: TikTokWeb/Info.plist
+      # 说明：XcodeGen 会用这里的 properties 重新生成 Info.plist，
+      # 因此所有键都必须写在本文件里，直接改 Info.plist 会被覆盖。
+      properties:
+        CFBundleName: TikTok
+        CFBundleDisplayName: TikTok
+        LSRequiresIPhoneOS: true
+        # 启动页：深色底 + 居中 logo（音符 + TikTok），系统自适应不拉伸
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+          UIImageRespectsSafeAreaInsets: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # 网页内上传/直播可能用到摄像头与麦克风
+        NSCameraUsageDescription: 网页内拍摄、直播需要使用摄像头
+        NSMicrophoneUsageDescription: 网页内录制、直播需要使用麦克风
+        # 允许加载 http/https 资源
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mallcenter.app.ios

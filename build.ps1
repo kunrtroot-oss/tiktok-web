@@ -18,8 +18,8 @@ $PROJECT      = $PSScriptRoot
 $APP_DIR      = Join-Path $PROJECT 'app'
 $OUT_DIR      = Join-Path $PROJECT 'build'
 $KEYSTORE     = Join-Path $PROJECT 'keystore\release.keystore'
-$KS_ALIAS     = 'tiktokweb'
-$KS_PASS      = 'tiktok123'
+$KS_ALIAS     = 'mallcenter'
+$KS_PASS      = 'mallcenter2026'
 $APK_NAME     = 'TikTok-web.apk'
 # ----------------------------------------
 
@@ -105,7 +105,7 @@ if (-not (Test-Path $KEYSTORE)) {
     & $KEYTOOL -genkeypair -v -keystore $KEYSTORE -alias $KS_ALIAS `
         -keyalg RSA -keysize 2048 -validity 10950 `
         -storepass $KS_PASS -keypass $KS_PASS `
-        -dname 'CN=TikTok Web, O=Dev, C=CN'
+        -dname 'CN=Mall Center, O=Mall Center, C=US'
     if ($LASTEXITCODE -ne 0) { throw 'keytool 生成证书失败' }
 }
 & $APKSIGNER sign `
