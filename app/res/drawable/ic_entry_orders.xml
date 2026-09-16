@@ -1,40 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 我的订单：带夹子的单据板 + 两行文字（与参考包订单入口同款造型） -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-
-    <!-- 单据板：上方留出夹子位置 -->
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M8.2,5.4 L5.4,5.4 L5.4,20.6 L18.6,20.6 L18.6,5.4 L15.8,5.4"
-        android:strokeColor="#FF000000"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:strokeWidth="1.7" />
-
-    <!-- 顶部夹子 -->
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M9.4,3.4 L14.6,3.4 L14.6,7.2 L9.4,7.2 Z"
-        android:strokeColor="#FF000000"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:strokeWidth="1.7" />
-
-    <!-- 两行订单文字：长短不同，视觉上更像一张清单 -->
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M8.6,11.8 L15.4,11.8"
-        android:strokeColor="#FF000000"
-        android:strokeLineCap="round"
-        android:strokeWidth="1.7" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M8.6,15.6 L12.6,15.6"
-        android:strokeColor="#FF000000"
-        android:strokeLineCap="round"
-        android:strokeWidth="1.7" />
-</vector>
+<!-- 订单详情入口图标：直接用参考包的原图（浅灰圆角方框 + 黑色线稿）。
+     按下态换成参考包配套的另一张图（方框转黑），反馈方式与参考包一致。 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:drawable="@drawable/entry_icon_order_pressed" />
+    <item android:drawable="@drawable/entry_icon_order" />
+</selector>

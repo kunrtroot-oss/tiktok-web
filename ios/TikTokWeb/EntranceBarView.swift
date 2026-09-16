@@ -1,23 +1,29 @@
 import UIKit
 
-/// 个人主页顶部的一排入口（订单详情 / 商品橱窗 / 店铺中心）。
+/// 个人主页顶部的一排入口（店铺中心 / 商品橱窗 / 订单详情）。
 ///
-/// 参考包的做法是往「个人主页的原生视图树」里插一条横向滚动栏；我们的个人主页是 TikTok 官方网页，
+/// 参考包的做法是往「个人主页的原生视图树」里插一条入口栏；我们的个人主页是 TikTok 官方网页，
 /// 改不了它的 DOM，所以改成把这一栏放在网页上方、只在个人主页显示：
 /// 用户看到的效果一致——进入个人主页就出现一条图标入口，离开就消失。
 ///
+/// 单个入口的排布与参考包一致：圆角方框图标在左、文字在右，整组在入口内居中；
+/// 图标是参考包原图，按下时换成「方框转黑」的版本，所以全程不设 tintColor。
+///
 /// 用 UIScrollView + UIStackView（对应安卓的 HorizontalScrollView），
-/// 以后增加到第五个入口时可以横向滑动，不会把图标挤变形。
+/// 以后增加入口时可以横向滑动，不会把图标挤变形。
 final class EntranceBarView: UIView {
 
-    /// 入口条高度，与安卓版 74dp 保持一致
-    static let barHeight: CGFloat = 74
-    /// 图标与文字之间的间距
-    static let iconLabelGap: CGFloat = 6
-    /// 按下时的高亮色（品牌红），与安卓 selector 的 state_pressed 颜色一致
+    /// 入口条高度，与安卓版 36dp 对应
+    static let barHeight: CGFloat = 36
+    /// 图标与文字之间的间距，与安卓版 8dp 对应
+    static let iconLabelGap: CGFloat = 8
+    /// 底色：参考包截图实测是浅灰（约 #D5D5D3），与安卓 bg_entry_bar 一致
+    static let barBackground = UIColor(red: 0xD5 / 255.0, green: 0xD5 / 255.0,
+                                       blue: 0xD3 / 255.0, alpha: 1)
+    /// 按下时文字的高亮色（品牌红），与安卓 selector 的 state_pressed 颜色一致
     static let highlightColor = UIColor(red: 0xFE / 255.0, green: 0x2C / 255.0,
                                         blue: 0x55 / 255.0, alpha: 1)
-    /// 常态色，与安卓 selector 的默认颜色一致
+    /// 文字常态色，与安卓 selector 的默认颜色一致（图标颜色由图片负责，不在这里）
     static let normalColor = UIColor(red: 0x16 / 255.0, green: 0x18 / 255.0,
                                      blue: 0x23 / 255.0, alpha: 1)
     /// 单个入口的最小宽度：屏幕很窄时也不会挤成一团
@@ -40,8 +46,8 @@ final class EntranceBarView: UIView {
 
     // MARK: - 布局
     private func setup() {
-        // 白底 + 底部一条发丝线分割线：看起来像页面自带的一栏，而不是浮在网页上的补丁
-        backgroundColor = .white
+        // 浅灰底 + 底部一条发丝线分割线：看起来像页面自带的一栏，而不是浮在网页上的补丁
+        backgroundColor = Self.barBackground
         addBottomHairline()
 
         scrollView.showsHorizontalScrollIndicator = false
@@ -103,11 +109,13 @@ final class EntranceBarView: UIView {
     }
 }
 
-/// 单个入口 = 图标 + 文字，整体可点、按下时图标与文字一起变红（对应安卓的 selector）
+/// 单个入口 = 图标（左） + 文字（右），整体可点；按下时图标换成黑色方框版本、文字变红
 private final class EntranceItemView: UIControl {
 
-    /// 图标尺寸，与安卓入口条一致
-    private static let iconSize: CGFloat = 26
+    /// 图标边长，与安卓入口条一致（约占栏高的一半，参考包实测比例）
+    private static let iconSize: CGFloat = 18
+    /// 文字字号，与安卓入口条一致
+    private static let labelFontSize: CGFloat = 12
 
     let entrance: Entrance
 
@@ -120,7 +128,7 @@ private final class EntranceItemView: UIControl {
         setupIcon(entrance.icon)
         setupLabel(entrance.title)
         layoutContent()
-        // 初始为常态色
+        // 初始为常态（浅灰方框 + 深色文字）
         applyHighlight(false)
     }
 
@@ -135,39 +143,41 @@ private final class EntranceItemView: UIControl {
     }
 
     private func setupIcon(_ icon: EntranceIcon) {
-        iconView.image = icon.image(size: Self.iconSize)
         iconView.contentMode = .scaleAspectFit
         iconView.isUserInteractionEnabled = false
+        // 不设 tintColor：图标是「浅灰方框 + 黑色线稿」的双色图，染色会毁掉造型
+        iconView.image = icon.image(pressed: false)
     }
 
     private func setupLabel(_ title: String) {
         label.text = title
-        label.font = .systemFont(ofSize: 11)
+        label.font = .systemFont(ofSize: Self.labelFontSize)
         label.textAlignment = .center
         label.numberOfLines = 1
         label.isUserInteractionEnabled = false
     }
 
     private func layoutContent() {
-        let column = UIStackView(arrangedSubviews: [iconView, label])
-        column.axis = .vertical
-        column.alignment = .center
-        column.spacing = EntranceBarView.iconLabelGap
-        column.isUserInteractionEnabled = false
+        // 与参考包一致：图标在左、文字在右，整组在入口内居中
+        let row = UIStackView(arrangedSubviews: [iconView, label])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = EntranceBarView.iconLabelGap
+        row.isUserInteractionEnabled = false
 
-        addSubview(column)
-        column.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        row.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            column.centerXAnchor.constraint(equalTo: centerXAnchor),
-            column.centerYAnchor.constraint(equalTo: centerYAnchor),
+            row.centerXAnchor.constraint(equalTo: centerXAnchor),
+            row.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: Self.iconSize),
             iconView.heightAnchor.constraint(equalToConstant: Self.iconSize),
         ])
     }
 
     private func applyHighlight(_ highlighted: Bool) {
-        let color = highlighted ? EntranceBarView.highlightColor : EntranceBarView.normalColor
-        iconView.tintColor = color
-        label.textColor = color
+        // 按下态 = 换图（方框转黑），不是染色
+        iconView.image = entrance.icon.image(pressed: highlighted)
+        label.textColor = highlighted ? EntranceBarView.highlightColor : EntranceBarView.normalColor
     }
 }

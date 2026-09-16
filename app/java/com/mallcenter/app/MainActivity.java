@@ -32,11 +32,18 @@ import android.widget.ProgressBar;
  *   2) App 阶段：本类再叠一层同样的启动图盖住 WebView，
  *      等网页加载完成（或超时兜底）再淡出，两端画面完全一致，用户看不出接缝。
  *
- * <p>入口条（订单详情 / 商品橱窗 / 店铺中心）盖在网页上方，
+ * <p>入口条（店铺中心 / 商品橱窗 / 订单详情）盖在网页上方，
  * 只在个人主页显示；点击后跳到 {@link MallActivity} 这个独立网页页，
  * 与参考包「个人主页出现入口、点开进入独立页」的效果保持一致。
  */
 public class MainActivity extends Activity {
+
+    /**
+     * 调试用：adb 指定首屏地址时用。
+     * <p>例：{@code adb shell am start -n com.mallcenter.app/.MainActivity -e debug_url https://www.tiktok.com/@tiktok}
+     * <p>只接受本站地址，外部应用塞进来的其它网址会被忽略，正式用户不会用到。
+     */
+    private static final String EXTRA_DEBUG_URL = "debug_url";
 
     /** 启动图最长停留时间：网络太差时也要让用户进得去 */
     private static final long SPLASH_TIMEOUT_MS = 8000L;
@@ -45,7 +52,7 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    /** 个人主页顶部的四个入口，非个人主页隐藏 */
+    /** 个人主页顶部的三个入口，非个人主页隐藏 */
     private EntranceBarView entranceBar;
     /** 盖在网页上的启动图，网页就绪后淡出 */
     private View splashView;
@@ -104,9 +111,21 @@ public class MainActivity extends Activity {
             refreshEntranceBar(webView.getUrl());
             dismissSplash();
         } else {
-            webView.loadUrl(homeUrl);
+            webView.loadUrl(resolveFirstUrl());
         }
         setTitle(getString(R.string.app_name));
+    }
+
+    /**
+     * 决定首屏加载哪个地址：默认首页；带调试参数且属于本站时用调试地址。
+     * 只放行本站地址，避免外部应用通过该参数把 App 当跳板打开任意网页。
+     */
+    private String resolveFirstUrl() {
+        String debugUrl = getIntent().getStringExtra(EXTRA_DEBUG_URL);
+        if (debugUrl != null && debugUrl.startsWith(homeUrl)) {
+            return debugUrl;
+        }
+        return homeUrl;
     }
 
     /** 入口条贴在网页顶部（标题栏正下方），初始隐藏，进入个人主页才出现 */

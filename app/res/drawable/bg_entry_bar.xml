@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 入口条底色：白底 + 底部一条 1dp 浅灰分割线，让它看起来像页面自带的一栏，而不是浮在网页上的补丁 -->
+<!-- 入口条底色：参考包截图实测是浅灰（约 #D5D5D3），不是纯白；
+     底部再加一条 1dp 浅灰分割线，让它看起来像页面自带的一栏，而不是浮在网页上的补丁 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#FFFFFFFF" />
+            <solid android:color="#FFD5D5D3" />
         </shape>
     </item>
     <item
