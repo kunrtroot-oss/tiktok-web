@@ -15,17 +15,17 @@ struct Entrance {
     /// 路线标识，随地址与用户信息一起传给网页
     let route: String
 
-    /// 参考包在个人主页放四个入口，这里保持同样的数量和顺序
+    /// 个人主页上的三个入口，顺序固定为：订单详情 / 商品橱窗 / 店铺中心。
+    ///
+    /// 与安卓 `Entrance.all()` 保持逐项一致（名称、顺序、地址、route 都不能只在一边改）。
     static func all() -> [Entrance] {
         return [
-            Entrance(icon: .shopCenter, title: "店铺中心",
-                     url: Endpoints.shopCenter(), route: Endpoints.routeShopCenter),
+            Entrance(icon: .orders, title: "订单详情",
+                     url: Endpoints.orders(), route: Endpoints.routeOrders),
             Entrance(icon: .showcase, title: "商品橱窗",
                      url: Endpoints.showcase(), route: Endpoints.routeShowcase),
-            Entrance(icon: .orders, title: "我的订单",
-                     url: Endpoints.orders(), route: Endpoints.routeOrders),
-            Entrance(icon: .merchant, title: "商家入驻",
-                     url: Endpoints.merchant(), route: Endpoints.routeMerchant),
+            Entrance(icon: .shopCenter, title: "店铺中心",
+                     url: Endpoints.shopCenter(), route: Endpoints.routeShopCenter),
         ]
     }
 }

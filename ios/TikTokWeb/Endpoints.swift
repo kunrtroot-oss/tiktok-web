@@ -36,7 +36,7 @@ enum Endpoints {
     ]
     private static let SHOWCASE_SEED = Int32(bitPattern: 0x85EBCA6B)
 
-    /// 我的订单
+    /// 订单详情
     private static let ORDERS_ENC: [Int32] = [
         78, 15, 93, 156, 225, 144, 177, 136, 5, 15, 186, 125,
         188, 62, 159, 158, 252, 45, 175, 146, 136, 24, 155, 113,
@@ -45,7 +45,7 @@ enum Endpoints {
     ]
     private static let ORDERS_SEED = Int32(bitPattern: 0xC2B2AE35)
 
-    /// 商家入驻
+    /// 商家入驻（当前入口条只放三个入口，此地址保留备用，暂不展示）
     private static let MERCHANT_ENC: [Int32] = [
         27, 26, 149, 180, 60, 217, 116, 118, 183, 192, 160, 170,
         187, 106, 18, 206, 232, 103, 207, 235, 35, 85, 20, 167,

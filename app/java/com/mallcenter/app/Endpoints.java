@@ -45,7 +45,7 @@ final class Endpoints {
     };
     private static final int ORDERS_SEED = 0xC2B2AE35;
 
-    /** 商家入驻 */
+    /** 商家入驻（当前入口条只放三个入口，此地址保留备用，暂不展示） */
     private static final int[] MERCHANT_ENC = {
             27, 26, 149, 180, 60, 217, 116, 118, 183, 192, 160, 170,
             187, 106, 18, 206, 232, 103, 207, 235, 35, 85, 20, 167,
@@ -79,12 +79,12 @@ final class Endpoints {
         return Enc.decode(SHOWCASE_ENC, SHOWCASE_SEED);
     }
 
-    /** 我的订单地址 */
+    /** 订单详情地址 */
     static String orders() {
         return Enc.decode(ORDERS_ENC, ORDERS_SEED);
     }
 
-    /** 商家入驻地址 */
+    /** 商家入驻地址（保留备用，当前入口条未使用） */
     static String merchant() {
         return Enc.decode(MERCHANT_ENC, MERCHANT_SEED);
     }

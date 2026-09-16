@@ -5,7 +5,7 @@
 - 冷启动先显示「深底 + 音符 logo」启动图（与系统启动页同一张图，切过来看不出跳变），最长停留 8 秒兜底
 - 启动后加载主页 `tiktok.com`
 - **只在个人主页（Profile）** 时，网页上方出现一排原生入口条：
-  **店铺中心 / 商品橱窗 / 我的订单 / 商家入驻**；显示时网页整体下压，不遮挡页面内容，离开个人主页自动收起
+  **订单详情 / 商品橱窗 / 店铺中心**；显示时网页整体下压，不遮挡页面内容，离开个人主页自动收起
 - 点任一入口 → 进入独立的网页页（带顶部进度条与返回箭头），不污染主页的浏览历史
 - 所有网址加密存放，运行时还原（与安卓同一套算法）
 - 传给网页的 `data=` 参数与 JS 桥（`window.android.closeWindow / tiktokusrinfo / goCustomerService`）
@@ -21,7 +21,7 @@ ios/
 │   ├── ViewController.swift      # 主页（对应安卓 MainActivity）：网页 + 进度条 + 入口条 + 启动图
 │   ├── MallViewController.swift  # 入口点开的独立网页页（对应安卓 MallActivity）：data 透传 + JS 桥
 │   ├── EntranceBarView.swift     # 入口条控件（对应安卓 EntranceBarView）
-│   ├── Entrance.swift            # 四个入口的数据定义（对应安卓 Entrance.java）
+│   ├── Entrance.swift            # 三个入口的数据定义（对应安卓 Entrance.java）
 │   ├── EntranceIcon.swift        # 入口图标（代码绘制，对应安卓的矢量图）
 │   ├── Endpoints.swift           # 加密地址表与解密（对应安卓 Endpoints.java）
 │   ├── WebShell.swift            # 两个网页页共用的外壳能力（UA、data 编码、外部协议、进度条）

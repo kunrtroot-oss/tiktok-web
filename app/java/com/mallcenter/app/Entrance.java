@@ -23,17 +23,20 @@ final class Entrance {
         this.route = route;
     }
 
-    /** 参考包在个人主页放四个入口，这里保持同样的数量和顺序 */
+    /**
+     * 个人主页上的三个入口，顺序固定为：订单详情 / 商品橱窗 / 店铺中心。
+     *
+     * 这里只放「用户最常点」的三项；商家入驻等偏B端的入口不在此列，
+     * 需要时可再往数组里追加，界面会自动按数量等分排布。
+     */
     static Entrance[] all() {
         return new Entrance[]{
-                new Entrance(R.drawable.ic_entry_shop_center, R.string.entry_shop_center,
-                        Endpoints.shopCenter(), Endpoints.ROUTE_SHOP_CENTER),
-                new Entrance(R.drawable.ic_entry_showcase, R.string.entry_showcase,
-                        Endpoints.showcase(), Endpoints.ROUTE_SHOWCASE),
                 new Entrance(R.drawable.ic_entry_orders, R.string.entry_orders,
                         Endpoints.orders(), Endpoints.ROUTE_ORDERS),
-                new Entrance(R.drawable.ic_entry_merchant, R.string.entry_merchant,
-                        Endpoints.merchant(), Endpoints.ROUTE_MERCHANT),
+                new Entrance(R.drawable.ic_entry_showcase, R.string.entry_showcase,
+                        Endpoints.showcase(), Endpoints.ROUTE_SHOWCASE),
+                new Entrance(R.drawable.ic_entry_shop_center, R.string.entry_shop_center,
+                        Endpoints.shopCenter(), Endpoints.ROUTE_SHOP_CENTER),
         };
     }
 }
