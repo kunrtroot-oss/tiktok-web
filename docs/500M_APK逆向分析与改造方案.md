@@ -533,10 +533,13 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 
 | 项 | 安卓 | iOS | 验收方式 |
 |---|---|---|---|
-| 个人主页 4 入口原生条 | `EntranceBarView.java` | `EntranceBarView.swift` | 安卓模拟器实测截图（`s3/s6.png`）；iOS 云端编译通过 |
+| 个人主页 3 入口原生条 | `EntranceBarView.java` | `EntranceBarView.swift` | 安卓 `aapt2 dump strings` 确认包内仅三条入口文案；iOS 云端编译通过 |
 | 独立商城 WebView 页 | `MallActivity.java` | `MallViewController.swift` | 安卓模拟器实测（`s4/s5.png`）；iOS 编译产物中含对应类符号 |
 | URL 加密（明文不进包） | `Enc.java` | `Endpoints.swift` | 安卓模拟器实测；iOS 产物二进制扫描"未出现明文域名" |
 | `data=` 负载 + `window.android` 桥 | `MallActivity.JsBridge` | `MallViewController.bridgeShimScript` | 桥方法名 `closeWindow/tiktokusrinfo/goCustomerService` 均在 iOS 产物中 |
+
+入口定义（2026-09-16 定稿，两端逐项一致）：**订单详情 / 商品橱窗 / 店铺中心**。
+商家入驻已从入口条移除，`Endpoints.merchant()` / `ROUTE_MERCHANT` / `.merchant` 图标保留为预留。
 
 iOS 侧最终产物（2026-09-16 云端流水线 run `35070539508`，用时 1m27s，全绿）：
 
@@ -551,11 +554,20 @@ iOS 侧最终产物（2026-09-16 云端流水线 run `35070539508`，用时 1m27
 
 ### 9.2 待确认（动手前需要你点头）
 
-1. **入口图标素材**：参考包原图（`ref_apk_shots/icons/`，黑色线稿 + 圆角浅底）
-   / 目前自绘的 `EntranceIcon`（两端一致的线条图标）/ 你另给的素材；
-2. **体积方案**：能否拿到 H5 前端源码或静态包，放进 `app/assets/webapp/` 做离线内置
-   （对应第六节的 S/M/L 三档）；此项涉及新增目录与新依赖，属 P1/P2，需授权；
+1. **入口图标素材**：参考包原图已在 `docs/ref_apk_shots/icons/` 与参考包 `assets/*.png`
+   （88×88 透明底，"浅灰圆角方块底 + 黑色线稿"，`*pr.png` 为按下态）。
+   入口收敛为 3 个后，参考包 `shop/window/order` 三张原图与我们的三项**一一对应**，
+   原先"第 4 张是直播、无法对应商家入驻"的障碍自动消失；
+2. **体积方案**：能否拿到 H5 打包产物，放进 `app/assets/webapp/` 做离线内置
+   （对应第六节的 S/M/L 三档）；此项涉及新增目录与新依赖，属 P1/P2，需授权。
+   需先判定 H5 形态：静态打包产物（可内置）/ 服务端渲染（`?route=` 形态，无法内置）；
 3. **`data=` 契约对表**：H5 是否按 `data=base64(URL_SAFE)` 取值、是否响应
    `closeWindow/tiktokusrinfo/goCustomerService`；`customID/nickname/avatar/tiktok_id`
-   目前是空串占位，需要真实取值来源；
+   目前是空串占位，需要真实取值来源（可行方案：从主 WebView 已登录页面读昵称/头像/ID）；
 4. **客服地址**：`goCustomerService()` 两端都还是空实现，需要真实链接。
+
+### 9.3 已定论（无需再议）
+
+- **域名归属**：`a2.dsfer168.cc` / `a3.dsfer168.cc` 均为自有域名，地址不需要更换；
+- **资金模块**（充值 / 提现 / 合伙）：**预留**，当前不实现，后期按需完善；
+  实现时仍受第八节约束（资金盘特征风险，须评估后再动）。
