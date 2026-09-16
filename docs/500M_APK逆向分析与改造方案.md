@@ -524,3 +524,38 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 4. 该商城含 `Deposit / Withdraw / Partnership`（充值-提现-合伙），属**资金盘特征**，
    我方若照做同样的资金模块，风险等级与它无异 —— 建议**只做正规商品展示与下单**；
 5. P1/P2 会引入新依赖（`androidx.webkit` 等）并新增 `app/assets/webapp/` 目录结构 —— 按规矩**动手前需你点头**。
+
+---
+
+## 九、当前进度与验收记录
+
+### 9.1 已完成（两端功能对齐）
+
+| 项 | 安卓 | iOS | 验收方式 |
+|---|---|---|---|
+| 个人主页 4 入口原生条 | `EntranceBarView.java` | `EntranceBarView.swift` | 安卓模拟器实测截图（`s3/s6.png`）；iOS 云端编译通过 |
+| 独立商城 WebView 页 | `MallActivity.java` | `MallViewController.swift` | 安卓模拟器实测（`s4/s5.png`）；iOS 编译产物中含对应类符号 |
+| URL 加密（明文不进包） | `Enc.java` | `Endpoints.swift` | 安卓模拟器实测；iOS 产物二进制扫描"未出现明文域名" |
+| `data=` 负载 + `window.android` 桥 | `MallActivity.JsBridge` | `MallViewController.bridgeShimScript` | 桥方法名 `closeWindow/tiktokusrinfo/goCustomerService` 均在 iOS 产物中 |
+
+iOS 侧最终产物（2026-09-16 云端流水线 run `35070539508`，用时 1m27s，全绿）：
+
+- 文件：`TikTokWeb-unsigned.ipa`（593KB），内含 `Payload/TikTokWeb.app/TikTokWeb`（243KB）
+- Bundle ID `com.mallcenter.app.ios`，显示名 `TikTok`，最低系统 iOS 14.0
+- 已声明启动屏（`UILaunchScreen` → `LaunchBackground` + `LaunchLogo`）、
+  `NSAllowsArbitraryLoads`、摄像头/麦克风用途说明
+- 修复记录：首次编译（run `35070390212`）报
+  `'self.init' isn't called on all paths before returning from initializer` ——
+  `WebShell`/`Endpoints` 是无 case 的空枚举，空实现 `private init()` 无法让编译器确认路径闭合，
+  改为 `fatalError` 收尾后通过。
+
+### 9.2 待确认（动手前需要你点头）
+
+1. **入口图标素材**：参考包原图（`ref_apk_shots/icons/`，黑色线稿 + 圆角浅底）
+   / 目前自绘的 `EntranceIcon`（两端一致的线条图标）/ 你另给的素材；
+2. **体积方案**：能否拿到 H5 前端源码或静态包，放进 `app/assets/webapp/` 做离线内置
+   （对应第六节的 S/M/L 三档）；此项涉及新增目录与新依赖，属 P1/P2，需授权；
+3. **`data=` 契约对表**：H5 是否按 `data=base64(URL_SAFE)` 取值、是否响应
+   `closeWindow/tiktokusrinfo/goCustomerService`；`customID/nickname/avatar/tiktok_id`
+   目前是空串占位，需要真实取值来源；
+4. **客服地址**：`goCustomerService()` 两端都还是空实现，需要真实链接。
