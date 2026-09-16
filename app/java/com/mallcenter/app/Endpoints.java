@@ -3,7 +3,7 @@ package com.mallcenter.app;
 /**
  * 全 App 外部地址的唯一出处（全部加密存放，运行时不落明文）。
  *
- * 集中放一处的原因：地址以后要调整，只改这个文件；入口条、独立页共用同一份，
+ * 集中放一处的原因：地址以后要调整，只改这个文件；入口行、独立页共用同一份，
  * 不会出现「某个页面还连着旧地址」的不一致问题。
  *
  * 四个入口采用「一个站点 + route 参数」的方式区分，与参考包一致：
@@ -45,7 +45,7 @@ final class Endpoints {
     };
     private static final int ORDERS_SEED = 0xC2B2AE35;
 
-    /** 商家入驻（当前入口条只放三个入口，此地址保留备用，暂不展示） */
+    /** 商家入驻（当前入口行只放三个入口，此地址保留备用，暂不展示） */
     private static final int[] MERCHANT_ENC = {
             27, 26, 149, 180, 60, 217, 116, 118, 183, 192, 160, 170,
             187, 106, 18, 206, 232, 103, 207, 235, 35, 85, 20, 167,
@@ -84,7 +84,7 @@ final class Endpoints {
         return Enc.decode(ORDERS_ENC, ORDERS_SEED);
     }
 
-    /** 商家入驻地址（保留备用，当前入口条未使用） */
+    /** 商家入驻地址（保留备用，当前入口行未使用） */
     static String merchant() {
         return Enc.decode(MERCHANT_ENC, MERCHANT_SEED);
     }

@@ -230,6 +230,12 @@ private int getPos(ViewGroup v, int id) {     // 遍历直接子 View 比对 id
 没有任何 `WindowManager` / `TYPE_APPLICATION_OVERLAY` 悬浮窗（已全量搜索确认），
 manifest 里的 `SYSTEM_ALERT_WINDOW` 是官方包自带的，与商城无关。
 
+> **我们自己的做法（2026-09-16 定稿，与参考包等效但实现层不同）**：参考包是往**它自己的原生布局**里插
+> `HorizontalScrollView`；我们的个人主页是**线上网页**，原生层没有可插的容器，
+> 因此改为把同一行**注入到网页 DOM 里**（`ProfileEntranceRow.java`），
+> 位置同样落在"简介下方、内容 tabs 上方"，随页面滚动，效果与参考包 1:1。
+> 两者共同点：**都不是悬浮窗、都不遮内容、都只在个人主页出现**。
+
 #### ④ 这一行里放了什么（5 个按钮）
 
 `addline()` → `addLitem(...)`，每个 item = `LinearLayout`（`ImageView` 图标 + `TextView` 文案）：
@@ -408,7 +414,8 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 5. **"入口放在个人主页的一整行图标"这个交互设计** → 这是本次最有价值的**产品结论**：
    - 用户不用学新操作，切到"我的"就能看到商城入口，**转化路径最短**；
    - 不依赖任何敏感权限 → **不增加误报风险**；
-   - 入口条是"塞进现有页面"的，不需要改 App 结构 → 我们自己写壳时，直接在"我的"页里原生排一行即可。
+   - 入口行是"塞进现有页面"的，不需要改 App 结构 → 我们自己写壳时，把这一行注入到个人主页的网页正文里即可
+     （详见 9.1 所述做法与实测）。
    → 我们要做的是**用合规方式复刻这个交互**（自己的 App 里自己排一行入口），不是复刻它的破解手段。
 6. **"入口 → 独立 WebView Activity"的技术分层** → 商城页面与 App 主页面隔离，互不影响，
    我们照抄这个结构：`MainActivity`（壳）+ `MallActivity`（WebView）。
@@ -539,20 +546,31 @@ public void setTDUserInfo(User user) {        // 官方登录/切号后回调
 
 | 项 | 安卓 | iOS | 验收方式 |
 |---|---|---|---|
-| 个人主页 3 入口原生条 | `EntranceBarView.java` | `EntranceBarView.swift` | 安卓 `aapt2 dump strings` 确认包内仅三条入口文案；iOS 云端编译通过 |
-| 独立商城 WebView 页 | `MallActivity.java` | `MallViewController.swift` | 安卓模拟器实测（`s4/s5.png`）；iOS 编译产物中含对应类符号 |
+| 个人主页 3 入口行（**注入网页正文**，非原生条） | `ProfileEntranceRow.java`（注入 JS + 回跳桥） | **待同步**（`EntranceBarView.swift` 仍是旧的顶部原生条） | 安卓 `aapt2 dump strings` 确认包内仅三条入口文案（`String #20 订单详情 / #21 店铺中心 / #22 商品橱窗`）；安卓模拟器实拍 `docs/验收截图/入口行_模拟器_个人主页.png` + DOM 实测 |
+| 独立商城 WebView 页 | `MallActivity.java` | `MallViewController.swift` | 安卓模拟器实拍 `docs/验收截图/入口行_点击店铺中心_商城页.png`；iOS 编译产物中含对应类符号 |
 | URL 加密（明文不进包） | `Enc.java` | `Endpoints.swift` | 安卓模拟器实测；iOS 产物二进制扫描"未出现明文域名" |
 | `data=` 负载 + `window.android` 桥 | `MallActivity.JsBridge` | `MallViewController.bridgeShimScript` | 桥方法名 `closeWindow/tiktokusrinfo/goCustomerService` 均在 iOS 产物中 |
 
 入口定义（2026-09-16 定稿，两端逐项一致）：**店铺中心 / 商品橱窗 / 订单详情**（顺序与参考包截图一致）。
-商家入驻已从入口条移除，`Endpoints.merchant()` / `ROUTE_MERCHANT` / `.merchant` 图标保留为预留。
+商家入驻已从入口行移除，`Endpoints.merchant()` / `ROUTE_MERCHANT` / `.merchant` 图标保留为预留。
 
-入口条已按参考包原理 1:1 重做（横向「图标在左 + 文字在右」、直接用参考包原图、按下态换图不染色）：
+入口行已按参考包原理 1:1 重做（横向「图标在左 + 文字在右」、直接用参考包原图、按下态换图不染色）。
+**位置按你的指正改定：不再固定在屏幕顶部、不再把网页往下压**，而是注入进个人主页网页正文，
+长在「简介 + Follow 按钮」之下、「网格/私密/收藏/喜欢」那排内容 tabs 之上，随页面一起滚动：
 
-- 安卓：`HorizontalScrollView` + 36dp 灰底（`#FFD5D5D3`）+ 1dp 分隔线；条目 18dp 图标 / 8dp 间距 / 12sp 文字。
-  模拟器实测：`HorizontalScrollView [0,290][1080,389]`（99px ≈ 37.7dp，含分隔线）、
-  图标 49×49px ≈ 18.7dp、图标↔文字间距 22px ≈ 8.4dp、`WebView` 起点 y=389px（下压，不遮挡）。
-  参考包实测约 30dp，我们取 36dp 属有意偏差（触控区更友好），已记录。
+- 安卓：`ProfileEntranceRow.java` —— 往 WebView 注入一个 DOM 节点（`#mc-entry-row`）+ 一段 CSS（`#mc-entry-style`），
+  锚点用 `data-e2e`（`user-bio` / `user-item-list` / `DivVideoFeedTab`）逐级向上找"简介与 tabs 之间"的那个位置；
+  3 项各占 1/3 宽，36 高（CSS px）、#FFD5D5D3 灰底、12px 文字、图标沿用参考包原图（base64 内联进 `background-image`）。
+  模拟器 DOM 实测（视口 393×722 CSS px，`devicePixelRatio = 2.75`）：
+  简介底 `y=132` → **入口行 `y=188→224，高 36、宽 393`** → 内容 tabs `y=224→268` → 视频列表 `y=268` 起；
+  每项宽 `131`（= 393 / 3）、文字高 `12`；把页面滚动 200px，行的 `top` 由 `188 → -12`（正好随动 200px），**证明它不是固定在屏幕上**。
+  点第一项：命中测试 `topMostIsItem: true`，`route=shopCenter`，logcat 出现
+  `ActivityTaskManager: START u0 {cmp=com.mallcenter.app/.MallActivity (has extras)}`，
+  `Displayed com.mallcenter.app/.MallActivity … +158ms`，页内标题栏为「店铺中心」。
+  返回后（`adb BACK`）行会自动重新挂回同一位置（`MutationObserver` 兜住 SPA 重渲染），实测 3 项俱在。
+- **教训（已修）**：安卓 `getDimensionPixelSize()` 拿到的是**物理像素**（此机 dp × 2.75），
+  而 TikTok 网页是 `width=device-width, initial-scale=1`，1 CSS px = 1 dp；
+  早期直接把物理像素写进 CSS，导致高度看起来偏大。现在统一走 `ProfileEntranceRow.cssPx()` 除以 `displayMetrics.density`。
 - iOS：`EntranceIcon.swift` 按名取 `Icons/` 内 png，`applyHighlight` 换图。
   云端流水线 run `35082450063`（1m40s 全绿）产物 `TikTokWeb-unsigned.ipa`（629,688 字节）中，
   **六张 `entry_icon_*.png` 全部确认真实进包**（1445/1715/1139/1539/1852/1408 字节）。
@@ -575,19 +593,22 @@ iOS 侧产物记录（云端流水线 run `35070539508`，用时 1m27s，全绿�
 1. ~~入口图标素材~~ → **已定稿：直接用参考包原图**。
    参考包 `shop / window / order` 三张 88×88 透明底原图（`*pr.png` 为按下态）已原样装入
    `app/res/drawable-nodpi/entry_icon_*.png` 与 `ios/TikTokWeb/Icons/entry_icon_*.png`，
-   与我们的三项一一对应。安卓用 `<selector>` 换图、iOS 用 `image(pressed:)` 换图，
-   **不做 tintColor 染色**（原图是"浅灰方框 + 黑线稿"双色，染色会把两者一起染掉）。
+   与我们的三项一一对应。安卓把两张 png 读成 base64 内联进 CSS `background-image`
+   （`ProfileEntranceRow.iconDataUri()`，常态一张、`active` 一张），
+   iOS 用 `image(pressed:)` 换图，**不做 tintColor 染色**（原图是"浅灰方框 + 黑线稿"双色，染色会把两者一起染掉）。
    原"第 4 张是直播、无法对应商家入驻"的障碍随入口收敛为 3 个自动消失。
 2. ~~体积方案（S/M/L 三档）~~ → **已选 C：不折腾**。
    入口继续保持打开线上 H5 页（`?route=shopCenter / goodsList / orderList`），
    不新增 `app/assets/webapp/`、不引入打包产物。包体积维持约 2.8MB；
    好处是 H5 改完即时生效、无需发版；代价是无网络时无法打开商城。
    参考包那 500MB 来自塞入第三方 APK 与内嵌页面，属违法路径，红线上不做。
-3. **入口出现时机** → **已选 A**：仅"登录后的个人主页"显示入口条；
-   未登录/离开个人主页自动收起（模拟器未登录状态看不到入口条属正常现象，
-   验证时用 `debug_url` 同域调试参数直接落到个人主页）。
+3. **入口出现时机** → **已选 A（按页面判定，与登录状态无关）**：只在该 URL 是个人主页时注入入口行
+   —— `MainActivity.isProfilePage()` 判定 `/profile`（自己的主页）或 `/@用户名`（别人的主页，后面不再带 `/video/` 等子路径）；
+   离开个人主页（首页 / 视频页 / 发现页等）即移除，回到个人主页再自动挂回。
+   实测模拟器**未登录**状态下也能看到入口行（截图 `入口行_模拟器_个人主页.png`），
+   因为行是网页正文里的一段 DOM，登录与否只影响页面上方昵称/头像是否显示。
 4. ~~商家入驻~~ → **预留**：地址与 route 保留（`Endpoints.merchant()` / `ROUTE_MERCHANT` /
-   `routeMerchant`），只是不挂在入口条上，后期需要时一行代码即可放回。
+   `routeMerchant`），只是不挂在入口行上，后期需要时一行代码即可放回。
 
 ### 9.3 仍待你确认（不阻塞当前交付）
 

@@ -2,11 +2,18 @@
 
 这是 TikTok 网页壳的 iOS 版源码，界面与功能跟安卓版**一一对应**：
 
+> ⚠️ **待同步（重要，别照现在的 iOS 代码抄）**：安卓侧已把入口行改成**注入个人主页网页正文**
+> —— 位置在「简介 + Follow 按钮」下方、「网格/私密/收藏/喜欢」那排内容 tabs 上方，随页面一起滚动，
+> **不固定在屏幕顶部、不把网页往下压**（模拟器实拍见 `docs/验收截图/入口行_模拟器_个人主页.png`）。
+> **iOS 目前仍是旧做法**：个人主页上方压一条原生入口条、并把网页整体下推，位置与参考包截图不一致，
+> 需要按 `docs/一比一复刻_准备清单.md` 第六节第 4 项同步（方案同安卓：注入 JS 行 + `WKScriptMessageHandler` 回跳）。
+
 - 冷启动先显示「深底 + 音符 logo」启动图（与系统启动页同一张图，切过来看不出跳变），最长停留 8 秒兜底
 - 启动后加载主页 `tiktok.com`
-- **只在个人主页（Profile）** 时，网页上方出现一排原生入口条：
-  **店铺中心 / 商品橱窗 / 订单详情**（顺序与安卓、与参考包截图一致）；
-  显示时网页整体下压，不遮挡页面内容，离开个人主页自动收起
+- **只在个人主页（Profile）** 时出现一排入口：**店铺中心 / 商品橱窗 / 订单详情**
+  （顺序与安卓、与参考包截图一致）：
+  - 安卓（已完成）：注入进个人主页**网页正文**，长在简介下方、内容 tabs 上方，随页面一起滚动；
+  - iOS（待同步）：暂时仍是「网页上方压一条原生入口条 + 网页下压」的旧写法，离开个人主页自动收起
 - 点任一入口 → 进入独立的网页页（带顶部进度条与返回箭头），不污染主页的浏览历史
 - 所有网址加密存放，运行时还原（与安卓同一套算法）
 - 传给网页的 `data=` 参数与 JS 桥（`window.android.closeWindow / tiktokusrinfo / goCustomerService`）
@@ -19,9 +26,10 @@ ios/
 ├── project.yml                   # XcodeGen 工程配置（新增 .swift 会被自动收录，无需改此文件）
 ├── TikTokWeb/
 │   ├── AppDelegate.swift         # 入口：启动 UINavigationController(ViewController)
-│   ├── ViewController.swift      # 主页（对应安卓 MainActivity）：网页 + 进度条 + 入口条 + 启动图
+│   ├── ViewController.swift      # 主页（对应安卓 MainActivity）：网页 + 进度条 + 启动图
+│   │                             #   入口行安卓侧由 ProfileEntranceRow 注入网页，iOS 待同步
 │   ├── MallViewController.swift  # 入口点开的独立网页页（对应安卓 MallActivity）：data 透传 + JS 桥
-│   ├── EntranceBarView.swift     # 入口条控件（对应安卓 EntranceBarView）
+│   ├── EntranceBarView.swift     # 【旧写法，待同步】顶部原生入口条（对应安卓已删除的 EntranceBarView.java）
 │   ├── Entrance.swift            # 三个入口的数据定义（对应安卓 Entrance.java）
 │   ├── EntranceIcon.swift        # 入口图标取图逻辑（按名取 Icons/ 里的 png）
 │   ├── Icons/                    # 入口图标原图（与安卓 res/drawable-nodpi 同一套文件）
@@ -73,5 +81,5 @@ open TikTokWeb.xcodeproj   # 用 Xcode 打开，选真机，直接 Run 即可
 | 点 | 安卓 | iOS | 原因 |
 |---|---|---|---|
 | 返回 | 系统返回键：能退网页就退网页，到底再退出 | 标题栏返回箭头（常驻） | iOS 没有硬件返回键；若照抄安卓「到底就隐藏返回键」，用户会退不回个人主页 |
-| 页内历史 | `onPageFinished` + `doUpdateVisitedHistory` | KVO 监听 `url` | 两端都是「地址一变就刷新入口条可见性」 |
+| 页内历史 | `onPageFinished` + `doUpdateVisitedHistory` | KVO 监听 `url` | 两端都是「地址一变就刷新入口行可见性」 |
 | JS 桥 | `addJavascriptInterface` 原生对象 | 注入同名 `window.android` 脚本对象 | iOS 无对应能力，需自己造对象再把调用转成消息 |

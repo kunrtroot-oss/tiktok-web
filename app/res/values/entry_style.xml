@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   个人主页入口行（店铺中心 / 商品橱窗 / 订单详情）的样式常量。
+
+   入口行是注入到个人主页正文里的网页元素，这些数值由 ProfileEntranceRow 读出来换算成 CSS。
+   放在资源里而不是写死在代码里的原因：颜色、尺寸只此一处，改样式不会出现
+   「原生改了、网页没改」的两份定义。
+-->
+<resources>
+    <!-- 底色与参考包一致：浅灰底 + 一条很淡的分隔线，看起来像页面自带的一栏 -->
+    <color name="entry_bar_bg">#FFD5D5D3</color>
+    <color name="entry_bar_divider">#14000000</color>
+    <color name="entry_label_normal">#FF161823</color>
+    <color name="entry_label_pressed">#FFFE2C55</color>
+    <color name="entry_item_pressed_bg">#0D000000</color>
+
+    <!-- 行高：按参考包截图实测约 35px（截图缩放 1.65 倍反推），取 36dp 留一点余量 -->
+    <dimen name="entry_bar_height">36dp</dimen>
+    <!-- 图标边长：实测图标方框 ≈1.24 倍文字字高，12sp 文字对应约 15dp -->
+    <dimen name="entry_icon_size">15dp</dimen>
+    <!-- 图标与文字之间的间距：实测约 0.75 个文字高度 -->
+    <dimen name="entry_icon_label_gap">9dp</dimen>
+    <!-- 文字字号 -->
+    <dimen name="entry_label_size">12sp</dimen>
+    <!-- 单个入口的最小宽度：屏幕很窄时也不会挤成一团 -->
+    <dimen name="entry_item_min_width">84dp</dimen>
+</resources>

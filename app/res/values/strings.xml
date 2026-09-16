@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">TikTok</string>
 
-    <!-- 个人主页入口条上的三个名称，顺序与 Entrance.all() 一一对应：订单详情 / 商品橱窗 / 店铺中心 -->
+    <!-- 个人主页入口行上的三个名称，顺序与 Entrance.all() 一一对应：订单详情 / 商品橱窗 / 店铺中心 -->
     <string name="entry_orders">订单详情</string>
     <string name="entry_showcase">商品橱窗</string>
     <string name="entry_shop_center">店铺中心</string>

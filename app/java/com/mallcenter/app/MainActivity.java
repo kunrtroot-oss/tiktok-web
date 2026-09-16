@@ -7,11 +7,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -32,9 +32,9 @@ import android.widget.ProgressBar;
  *   2) App 阶段：本类再叠一层同样的启动图盖住 WebView，
  *      等网页加载完成（或超时兜底）再淡出，两端画面完全一致，用户看不出接缝。
  *
- * <p>入口条（店铺中心 / 商品橱窗 / 订单详情）盖在网页上方，
- * 只在个人主页显示；点击后跳到 {@link MallActivity} 这个独立网页页，
- * 与参考包「个人主页出现入口、点开进入独立页」的效果保持一致。
+ * <p>入口行（店铺中心 / 商品橱窗 / 订单详情）由 {@link ProfileEntranceRow} <b>注入到个人主页正文里</b>
+ * ——位置在个人简介下面、视频列表上面，随页面一起滚动，和参考包一致（不是浮在网页上方）。
+ * 只在个人主页显示；点击后跳到 {@link MallActivity} 这个独立网页页。
  */
 public class MainActivity extends Activity {
 
@@ -52,8 +52,6 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    /** 个人主页顶部的三个入口，非个人主页隐藏 */
-    private EntranceBarView entranceBar;
     /** 盖在网页上的启动图，网页就绪后淡出 */
     private View splashView;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -61,12 +59,14 @@ public class MainActivity extends Activity {
     private boolean splashDismissed;
     /** 主页地址（运行时还原后缓存，用于判断是否停留在个人主页） */
     private String homeUrl;
+    /** 上一次同步给网页的入口行状态，避免在同一个页面上反复注入 */
+    private boolean entranceRowShown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 用 FrameLayout 叠四层：网页层 + 顶部加载进度条 + 入口条 + 启动图（最后加的在最上面）
+        // 用 FrameLayout 叠三层：网页层 + 顶部加载进度条 + 启动图（最后加的在最上面）
         FrameLayout root = new FrameLayout(this);
 
         webView = new WebView(this);
@@ -80,8 +80,6 @@ public class MainActivity extends Activity {
         int barHeight = (int) (3 * getResources().getDisplayMetrics().density);
         root.addView(progressBar, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, barHeight));
-
-        addEntranceBar(root);
 
         // 启动图用背景图方式贴满整屏：与主题里的 windowBackground 用同一张图，
         // 从冷启动画面切到这一层时看不出任何跳变。
@@ -108,7 +106,7 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             // 旋屏/被系统回收后恢复现场，不重新加载首页；启动图立刻撤掉
             webView.restoreState(savedInstanceState);
-            refreshEntranceBar(webView.getUrl());
+            syncEntranceRow(webView.getUrl());
             dismissSplash();
         } else {
             webView.loadUrl(resolveFirstUrl());
@@ -128,21 +126,6 @@ public class MainActivity extends Activity {
         return homeUrl;
     }
 
-    /** 入口条贴在网页顶部（标题栏正下方），初始隐藏，进入个人主页才出现 */
-    private void addEntranceBar(FrameLayout root) {
-        entranceBar = new EntranceBarView(this, new EntranceBarView.OnEntranceClickListener() {
-            @Override
-            public void onEntranceClick(Entrance entrance) {
-                openEntrance(entrance);
-            }
-        });
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, EntranceBarView.barHeightPx(this));
-        params.gravity = Gravity.TOP;
-        entranceBar.setVisibility(View.GONE);
-        root.addView(entranceBar, params);
-    }
-
     /** 打开入口对应的独立网页页，把地址、路线、入口名一并带过去 */
     private void openEntrance(Entrance entrance) {
         Intent intent = new Intent(this, MallActivity.class);
@@ -150,6 +133,48 @@ public class MainActivity extends Activity {
         intent.putExtra(MallActivity.EXTRA_ROUTE, entrance.route);
         intent.putExtra(MallActivity.EXTRA_TITLE, getString(entrance.labelRes));
         startActivity(intent);
+    }
+
+    /**
+     * 按路线标识找到对应入口；找不到就返回 null。
+     *
+     * <p>网页那边只送进来一个字符串，地址始终从 {@link Endpoints} 取，
+     * 外部脚本即使伪造一个 route 也打不开白名单之外的页面。
+     */
+    private Entrance findEntrance(String route) {
+        if (route == null) {
+            return null;
+        }
+        for (Entrance entrance : Entrance.all()) {
+            if (route.equals(entrance.route)) {
+                return entrance;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 暴露给网页的桥：注入的入口行被点击时，网页调用 {@code window.android.openEntrance(route)}。
+     *
+     * <p>注意：这里的回调发生在 WebView 的 JS 线程，不是界面线程，
+     * 所以打开页面这件事必须用 {@code runOnUiThread} 抛回界面线程再做。
+     */
+    private class EntranceBridge {
+
+        @JavascriptInterface
+        public void openEntrance(final String route) {
+            final Entrance entrance = findEntrance(route);
+            if (entrance == null) {
+                return;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // 必须写 MainActivity.this：桥里同名的方法会遮住外层方法
+                    MainActivity.this.openEntrance(entrance);
+                }
+            });
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -176,6 +201,9 @@ public class MainActivity extends Activity {
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
+        // 注册 JS 桥：网页里注入的入口行点一下，就通过它回到原生打开 MallActivity
+        webView.addJavascriptInterface(new EntranceBridge(), "android");
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -190,8 +218,10 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                // 页面加载完成后：刷新入口条可见性，并撤掉启动图
-                refreshEntranceBar(url);
+                // 整页重新加载后网页里的注入内容已随旧文档一起消失，
+                // 因此这里先清掉「已注入」的记录，强制重新注入一次
+                entranceRowShown = false;
+                syncEntranceRow(url);
                 dismissSplash();
             }
 
@@ -199,8 +229,8 @@ public class MainActivity extends Activity {
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
                 super.doUpdateVisitedHistory(view, url, isReload);
                 // 单页应用内部跳转（如 pushState 改 URL）不会触发 onPageFinished，
-                // 这里补一次刷新，保证在个人主页与其它页面之间切换时入口条能及时出现/消失
-                refreshEntranceBar(url);
+                // 这里补一次同步，保证在个人主页与其它页面之间切换时入口行能及时出现/消失
+                syncEntranceRow(url);
             }
         });
 
@@ -242,35 +272,22 @@ public class MainActivity extends Activity {
                 .start();
     }
 
-    /** 入口条只在个人主页出现，其余页面隐藏；显示时把网页整体下压，不遮挡页面顶部内容 */
-    private void refreshEntranceBar(String url) {
-        if (entranceBar == null) {
-            return;
-        }
-        boolean show = isProfilePage(url);
-        entranceBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        applyContentTopInset(show ? EntranceBarView.barHeightPx(this) : 0);
-    }
-
     /**
-     * 调整网页与进度条的上边距：入口条占位时把它们整体下移，
-     * 相当于把入口「插进页面顶部」，与参考包的效果一致（而不是盖住内容）。
+     * 让网页里的入口行与当前页面一致：个人主页注入出来，其它页面移除。
+     *
+     * <p>入口行是网页里的一段 DOM（位置在个人简介下方），所以「显示/隐藏」是通过
+     * {@link ProfileEntranceRow} 注入脚本完成的，原生这边不再往界面上加任何控件，
+     * 页面也不会被下压或遮挡。
+     *
+     * <p>同一个状态不重复注入，避免在个人主页里反复执行脚本。
      */
-    private void applyContentTopInset(int insetPx) {
-        shiftTop(webView, insetPx);
-        shiftTop(progressBar, insetPx);
-    }
-
-    private void shiftTop(View view, int topPx) {
-        if (view == null || !(view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) {
+    private void syncEntranceRow(String url) {
+        boolean show = isProfilePage(url);
+        if (show == entranceRowShown) {
             return;
         }
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-        if (params.topMargin == topPx) {
-            return;
-        }
-        params.topMargin = topPx;
-        view.setLayoutParams(params);
+        entranceRowShown = show;
+        ProfileEntranceRow.apply(webView, this, show);
     }
 
     /**
@@ -362,7 +379,7 @@ public class MainActivity extends Activity {
             webView.destroy();
             webView = null;
         }
-        entranceBar = null;
+        entranceRowShown = false;
         splashView = null;
         super.onDestroy();
     }

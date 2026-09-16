@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 店铺中心入口图标：直接用参考包的原图（浅灰圆角方框 + 黑色线稿）。
-     按下态换成参考包配套的另一张图（方框转黑），反馈方式与参考包一致。 -->
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_pressed="true" android:drawable="@drawable/entry_icon_shop_pressed" />
-    <item android:drawable="@drawable/entry_icon_shop" />
-</selector>
