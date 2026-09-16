@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 入口图标颜色：常态深色，按下变成品牌红（相当于参考包的「按下态图片」，这里用染色实现，省一套图） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#FFFE2C55" android:state_pressed="true" />
+    <item android:color="#FF161823" />
+</selector>

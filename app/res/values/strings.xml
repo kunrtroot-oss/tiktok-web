@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TikTok</string>
-    <string name="mall">Shop</string>
-    <string name="merchant">Merchant</string>
+
+    <!-- 个人主页入口条上的四个名称，顺序与 Entrance.all() 一一对应 -->
+    <string name="entry_shop_center">店铺中心</string>
+    <string name="entry_showcase">商品橱窗</string>
+    <string name="entry_orders">我的订单</string>
+    <string name="entry_merchant">商家入驻</string>
 </resources>

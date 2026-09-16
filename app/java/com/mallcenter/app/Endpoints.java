@@ -1,0 +1,91 @@
+package com.mallcenter.app;
+
+/**
+ * 全 App 外部地址的唯一出处（全部加密存放，运行时不落明文）。
+ *
+ * 集中放一处的原因：地址以后要调整，只改这个文件；入口条、独立页共用同一份，
+ * 不会出现「某个页面还连着旧地址」的不一致问题。
+ *
+ * 四个入口采用「一个站点 + route 参数」的方式区分，与参考包一致：
+ * 网页端读到 route 就知道该渲染哪个页面，不需要为每个入口单独部署站点。
+ */
+final class Endpoints {
+
+    /** 首页：官方 TikTok 网页 */
+    private static final int[] HOME_ENC = {
+            65, 108, 134, 246, 27, 92, 229, 90, 128, 197, 111, 130,
+            167, 149, 17, 123, 237, 107, 15, 84, 176, 98, 171,
+    };
+    private static final int HOME_SEED = 0x6D2B79F5;
+
+    /** 店铺中心 */
+    private static final int[] SHOP_CENTER_ENC = {
+            194, 28, 67, 63, 105, 178, 254, 46, 185, 121, 70, 135,
+            54, 231, 48, 174, 78, 202, 61, 243, 41, 113, 226, 133,
+            207, 190, 4, 184, 201, 60, 1, 47, 182, 171, 88, 57,
+            180, 254, 47, 124,
+    };
+    private static final int SHOP_CENTER_SEED = 0x27D4EB2F;
+
+    /** 商品橱窗 */
+    private static final int[] SHOWCASE_ENC = {
+            187, 120, 235, 138, 97, 15, 63, 26, 207, 35, 204, 119,
+            158, 51, 165, 74, 108, 97, 239, 100, 28, 42, 73, 171,
+            65, 92, 125, 41, 134, 143, 166, 105, 0, 22, 185, 170,
+            181, 31, 104,
+    };
+    private static final int SHOWCASE_SEED = 0x85EBCA6B;
+
+    /** 我的订单 */
+    private static final int[] ORDERS_ENC = {
+            78, 15, 93, 156, 225, 144, 177, 136, 5, 15, 186, 125,
+            188, 62, 159, 158, 252, 45, 175, 146, 136, 24, 155, 113,
+            169, 176, 254, 230, 221, 71, 1, 37, 115, 14, 197, 156,
+            187, 229, 7,
+    };
+    private static final int ORDERS_SEED = 0xC2B2AE35;
+
+    /** 商家入驻 */
+    private static final int[] MERCHANT_ENC = {
+            27, 26, 149, 180, 60, 217, 116, 118, 183, 192, 160, 170,
+            187, 106, 18, 206, 232, 103, 207, 235, 35, 85, 20, 167,
+            140, 177, 152, 214, 138, 9, 113, 240, 224, 168, 132, 251,
+            246, 2, 183, 58, 71, 201,
+    };
+    private static final int MERCHANT_SEED = 0x2545F491;
+
+    /** 路线标识：网页端按这个值决定渲染哪个页面，改这里要同步通知网页端 */
+    static final String ROUTE_SHOP_CENTER = "shopCenter";
+    static final String ROUTE_SHOWCASE = "goodsList";
+    static final String ROUTE_ORDERS = "orderList";
+    static final String ROUTE_MERCHANT = "merchantJoin";
+
+    private Endpoints() {
+        // 纯常量类，不允许实例化
+    }
+
+    /** 首页地址 */
+    static String home() {
+        return Enc.decode(HOME_ENC, HOME_SEED);
+    }
+
+    /** 店铺中心地址 */
+    static String shopCenter() {
+        return Enc.decode(SHOP_CENTER_ENC, SHOP_CENTER_SEED);
+    }
+
+    /** 商品橱窗地址 */
+    static String showcase() {
+        return Enc.decode(SHOWCASE_ENC, SHOWCASE_SEED);
+    }
+
+    /** 我的订单地址 */
+    static String orders() {
+        return Enc.decode(ORDERS_ENC, ORDERS_SEED);
+    }
+
+    /** 商家入驻地址 */
+    static String merchant() {
+        return Enc.decode(MERCHANT_ENC, MERCHANT_SEED);
+    }
+}

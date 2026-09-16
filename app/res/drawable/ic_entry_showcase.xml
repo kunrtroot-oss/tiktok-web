@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 商品橱窗：包裹/货箱外形（与参考包橱窗入口同款造型） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 箱体轮廓 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M12,3.4 L20.4,7.7 L20.4,16.3 L12,20.6 L3.6,16.3 L3.6,7.7 Z"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.7" />
+
+    <!-- 上盖折线：左上沿到中心再到右上沿 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M3.6,7.7 L12,12 L20.4,7.7"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.7" />
+
+    <!-- 中缝：箱子正面的封条 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M12,12 L12,20.6"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.7" />
+</vector>
