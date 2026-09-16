@@ -128,7 +128,9 @@ enum WebShell {
         return true
     }
 
+    /// 纯工具类型，不允许实例化。
+    /// 空枚举本身也构造不出来，这里用 fatalError 收尾是为了让编译器确认初始化路径已闭合。
     private init() {
-        // 纯工具类型，不允许实例化
+        fatalError("WebShell 只提供静态能力，不允许实例化")
     }
 }
