@@ -1,4 +1,4 @@
-package com.tiktok.webview;
+package com.mallcenter.app;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
@@ -6,9 +6,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
@@ -22,7 +25,14 @@ import android.widget.ProgressBar;
 
 /**
  * 把一个网页装进安卓 App 的外壳。
+ *
  * 首页地址与「商城」入口地址均以加密形式存放（不落明文），运行时还原后再加载。
+ *
+ * 启动流程分两段，避免中间出现白屏：
+ *   1) 系统阶段：主题的 android:windowBackground 指向启动图，
+ *      Activity 还没创建出来时就已经把启动图画在屏幕上；
+ *   2) App 阶段：本类再叠一层同样的启动图盖住 WebView，
+ *      等网页加载完成（或超时兜底）再淡出，两端画面完全一致，用户看不出接缝。
  */
 public class MainActivity extends Activity {
 
@@ -50,6 +60,11 @@ public class MainActivity extends Activity {
     /** 「商家」入口地址的密钥流种子 */
     private static final int MERCHANT_SEED = 0x9E3779B9;
 
+    /** 启动图最长停留时间：网络太差时也要让用户进得去 */
+    private static final long SPLASH_TIMEOUT_MS = 8000L;
+    /** 启动图淡出时长 */
+    private static final long SPLASH_FADE_MS = 350L;
+
     /**
      * 还原地址。线性同余推进密钥流，逐字符异或解密。
      * 这样明文 URL 不会以常量形式出现在 dex 中，无法用 strings 直接搜到。
@@ -66,6 +81,11 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progressBar;
+    /** 盖在网页上的启动图，网页就绪后淡出 */
+    private View splashView;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    /** 启动图是否已开始退场（防止重复触发淡出动画） */
+    private boolean splashDismissed;
     /** 主页地址（运行时还原后缓存，用于判断同域下的页面，如个人主页 Profile） */
     private String homeUrl;
     /** 商城地址（运行时还原后缓存，用于标题与入口跳转） */
@@ -77,7 +97,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 用 FrameLayout 叠一个网页层 + 一条顶部加载进度条
+        // 用 FrameLayout 叠三层：网页层 + 顶部加载进度条 + 启动图（最后加的在最上面）
         FrameLayout root = new FrameLayout(this);
 
         webView = new WebView(this);
@@ -92,6 +112,14 @@ public class MainActivity extends Activity {
         root.addView(progressBar, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, barHeight));
 
+        // 启动图用背景图方式贴满整屏：与主题里的 windowBackground 用同一张图，
+        // 从冷启动画面切到这一层时看不出任何跳变。
+        splashView = new View(this);
+        splashView.setBackgroundResource(R.drawable.splash);
+        root.addView(splashView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+
         setContentView(root);
 
         configureWebView();
@@ -100,9 +128,18 @@ public class MainActivity extends Activity {
         mallUrl = restore(MALL_ENC, MALL_SEED);
         merchantUrl = restore(MERCHANT_ENC, MERCHANT_SEED);
 
+        // 兜底：网页迟迟不返回也不把用户卡在启动图上
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                dismissSplash();
+            }
+        }, SPLASH_TIMEOUT_MS);
+
         if (savedInstanceState != null) {
-            // 旋屏/被系统回收后恢复现场，不重新加载首页
+            // 旋屏/被系统回收后恢复现场，不重新加载首页；启动图立刻撤掉
             webView.restoreState(savedInstanceState);
+            dismissSplash();
         } else {
             webView.loadUrl(homeUrl);
         }
@@ -147,10 +184,11 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                // 页面加载完成后：同步标题、返回键，并刷新菜单入口
+                // 页面加载完成后：同步标题、返回键，刷新菜单入口，并撤掉启动图
                 syncTitle(url);
                 updateBackButton(url);
                 invalidateOptionsMenu();
+                dismissSplash();
             }
 
             @Override
@@ -166,8 +204,7 @@ public class MainActivity extends Activity {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progressBar.setProgress(newProgress);
-                progressBar.setVisibility(newProgress >= 100 ? android.view.View.GONE
-                        : android.view.View.VISIBLE);
+                progressBar.setVisibility(newProgress >= 100 ? View.GONE : View.VISIBLE);
             }
 
             @Override
@@ -176,6 +213,29 @@ public class MainActivity extends Activity {
                 request.grant(request.getResources());
             }
         });
+    }
+
+    /** 让启动图淡出并移除。多次调用只生效一次（超时兜底与加载完成可能同时触发） */
+    private void dismissSplash() {
+        if (splashDismissed || splashView == null) {
+            return;
+        }
+        splashDismissed = true;
+        mainHandler.removeCallbacksAndMessages(null);
+        splashView.animate()
+                .alpha(0f)
+                .setDuration(SPLASH_FADE_MS)
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 动画结束后彻底摘掉，避免它长期占着一层绘制开销
+                        if (splashView != null && splashView.getParent() instanceof ViewGroup) {
+                            ((ViewGroup) splashView.getParent()).removeView(splashView);
+                        }
+                        splashView = null;
+                    }
+                })
+                .start();
     }
 
     /**
@@ -351,10 +411,13 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 先摘掉延时任务，避免 Activity 销毁后 Handler 仍持有引用
+        mainHandler.removeCallbacksAndMessages(null);
         if (webView != null) {
             webView.destroy();
             webView = null;
         }
+        splashView = null;
         super.onDestroy();
     }
 }

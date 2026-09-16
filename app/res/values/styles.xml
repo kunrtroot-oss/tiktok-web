@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   AppTheme：在系统默认主题之上，只改一件事——把窗口背景换成启动图。
+   作用：点图标到 Activity 创建之间有一段系统绘制时间，默认是白屏；
+   换成深色启动图后，冷启动第一帧就是「深底 + 音符 + TikTok」，不会闪白。
+-->
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.DarkActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+    </style>
+</resources>

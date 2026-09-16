@@ -1,6 +1,6 @@
 name: TikTokWeb
 options:
-  bundleIdPrefix: com.tiktok.webview
+  bundleIdPrefix: com.mallcenter.app
   deploymentTarget:
     iOS: "13.0"
   createIntermediateGroups: true
@@ -16,7 +16,7 @@ targets:
       path: TikTokWeb/Info.plist
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tiktok.webview.ios
+        PRODUCT_BUNDLE_IDENTIFIER: com.mallcenter.app.ios
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGNING_ALLOWED: "NO"
